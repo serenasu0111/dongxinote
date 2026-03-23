@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: dongxinote-mongo
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=dongxi_notes
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: dongxinote-api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/dongxi_notes
+      - JWT_SECRET=${JWT_SECRET:-dongxinote-secret-key}
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY}
+      - DOUBAO_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+    depends_on:
+      - mongodb
+    env_file:
+      - .env
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.frontend
+    container_name: dongxinote-web
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
